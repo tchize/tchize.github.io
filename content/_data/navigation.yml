@@ -1,0 +1,19 @@
+# main links
+main:
+  - title: "Contact"
+    url: /about/
+    description: "contact me"
+  - title: "Security"
+    url: /security/findings/
+    description: "Security findings"
+  - title: "Disclosing"
+    url: /security/full-disclosure/
+    description: "What I do with the findings"
+  # - title: "About"
+  #   url: https://mmistakes.github.io/minimal-mistakes/about/
+  # - title: "Sample Posts"
+  #   url: /year-archive/
+  # - title: "Sample Collections"
+  #   url: /collection-archive/
+  # - title: "Sitemap"
+  #   url: /sitemap/
