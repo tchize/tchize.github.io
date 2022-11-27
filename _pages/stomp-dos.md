@@ -58,7 +58,7 @@ Two key elements must be activated in a vulnerable version of Spring Framework t
 * You have enabled websocket support in Spring (eg using @EnableWebSocketMessageBroker)
 * You have enabled StompBrokerRelay (eg via MessageBrokerRegistry.enableStompBrokerRelay)
 
-Exploit code is published at https://github.com/tchize/CVE-2022-22971 (master branch).
+Exploit code is published at [https://github.com/tchize/CVE-2022-22971](https://github.com/tchize/CVE-2022-22971) (master branch).
 
 ## Technical behind this attack
 
@@ -138,7 +138,7 @@ the attack running.
 ## Fix
 
 Spring has published an official fix. 
-A sample code is provided in git at https://github.com/tchize/CVE-2022-22971  (branch upgrade). 
+A sample code is provided in git at [https://github.com/tchize/CVE-2022-22971](https://github.com/tchize/CVE-2022-22971)  (branch upgrade). 
 It shows the behavior of spring after the official fix.
 You basically get messages in the form
 
@@ -153,5 +153,5 @@ In this interceptor track session ID's and CONNECT/DISCONNECT to ignore addition
 not pass them to the StompBrokerRelay. 
 This should not be considered however as a permanent solution.
 
-A sample code is provided in git at https://github.com/tchize/CVE-2022-22971  (branch workaround)
+A sample code is provided in git at [https://github.com/tchize/CVE-2022-22971](https://github.com/tchize/CVE-2022-22971)  (branch workaround)
 
