@@ -100,7 +100,7 @@ TCP Connection stays open, but is not referenced anywhere anymore.
 
 ### How to exploit it
 
-A git will available with all exploit code later.
+A git is available with all exploit code at  https://github.com/tchize/CVE-2022-22971 (master branch).
 
 #### Setup
 
@@ -143,7 +143,7 @@ It shows the behavior of spring after the official fix.
 You basically get messages in the form
 
 > WARN 9234 --- [nboundChannel-9] o.s.m.s.s.StompBrokerRelayMessageHandler : Ignoring CONNECT in session c7b7a322-26c6-436e-af15-5c452517fc9c. Already connected.
->
+
 ## Workaround
 
 If you can't upgrade your Spring (seriously? Upgrade it), you can work around the issue
