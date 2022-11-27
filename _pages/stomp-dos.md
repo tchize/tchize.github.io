@@ -53,16 +53,16 @@ exploitation of this issue does not require authentication.
 
 ## Are you vulnerable?
 
-Two key elements must be activated in a vulnerable version of Spring Framework to be vulnerable:
+Two key elements must be activated to be vulnerable spring <5.3.20 or <5.2.22:
 
 * You have enabled websocket support in Spring (eg using @EnableWebSocketMessageBroker)
 * You have enabled StompBrokerRelay (eg via MessageBrokerRegistry.enableStompBrokerRelay)
 
 Exploit code is published at [https://github.com/tchize/CVE-2022-22971](https://github.com/tchize/CVE-2022-22971) (master branch).
 
-## Technical behind this attack
+## Technicals behind this attack
 
-### Stomp protocol
+### WebSocket and Stomp protocol
 
 A WebSocket is basically a raw permanent connection between the browser and the client. Any side can send anything inside it.
 Well nearly anything, the browser still has final word on headers and how to negociate the websocket. And the server
@@ -78,7 +78,7 @@ The STOMP protocol mandates that the client issues a ‘CONNECT’ or a ‘STOMP
 To the best of my knowledge, it does not clearly state if multiple CONNECT or STOMP commands are allowed 
 inside a single connection or the expected behavior of server in such condition.
 
-A Gray area in protocol and you guess it, a security risk for implementation.
+A Gray area in protocol, a security risk for implementation.
 
 ### Spring Relay implementation
 
@@ -93,10 +93,10 @@ When you issue a CONNECT or STOMP command, the relay will establish a new TCP co
 It will also generate a new session id that will be used to track that connection and associate it with your WebSocket. 
 If you close the WebSocket or the Session, the TCP connection will be closed too and private queues removed.
 
-Remember the Gray area about multiple CONNECT in the same WebSocket? Well, one part of the code doesn't care about the
+Here, the blur around multiple CONNECT appear. One part of the code doesn't care about the
 problem and will happily create new TCP connection while the other part assume there can be only one CONNECT and one backend
-TCP Connection per WebSocket. The result is that, when you issue a second CONNECT in the same WebSocket, the previous
-TCP Connection stays open, but is not referenced anywhere anymore. 
+TCP Connection per WebSocket. As a result, when you issue the additional CONNECTs in the same WebSocket session, the existing
+TCP Connection stays open, but are deferenced and not managed anymore. 
 
 ### How to exploit it
 
@@ -104,8 +104,8 @@ A git is available with all exploit code at  https://github.com/tchize/CVE-2022-
 
 #### Setup
 
-Assume you have Spring acting as a STOMP relay to a backend RabbitMQ. We are going
-to use some javascript to create CONNECT Messages in loop. 
+Let's assume you have Spring acting as a STOMP relay to a backend RabbitMQ. Note that this works the same with
+other STOMP backends. We are going to use some javascript to create CONNECT Messages in loop. 
 
 Initial situation is like this. On the browser, we open a single Websocket connection and issue a simple CONNECT
 [![Opened webbrowser with developper tab showing a Single websocket connection](/assets/images/stomp-dos/initial-1.png)](/assets/images/stomp-dos/initial-1.png)
@@ -133,14 +133,13 @@ Spring console show pool exhaustion
 
 Even after closing tab or browser, the connections between Spring and third party STOMP
 service remain. This mean the adverse party attacking this point does not have to keep
-the attack running. 
+the attack running.
 
 ## Fix
 
 Spring has published an official fix. 
-A sample code is provided in git at [https://github.com/tchize/CVE-2022-22971](https://github.com/tchize/CVE-2022-22971)  (branch upgrade). 
-It shows the behavior of spring after the official fix.
-You basically get messages in the form
+You can find a sample fixed code at [https://github.com/tchize/CVE-2022-22971](https://github.com/tchize/CVE-2022-22971)  (branch upgrade). 
+It shows the behavior of spring after the official fix. You basically get messages in the form
 
 > WARN 9234 --- [nboundChannel-9] o.s.m.s.s.StompBrokerRelayMessageHandler : Ignoring CONNECT in session c7b7a322-26c6-436e-af15-5c452517fc9c. Already connected.
 
