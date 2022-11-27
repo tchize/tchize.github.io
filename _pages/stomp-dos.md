@@ -22,27 +22,33 @@ toc: true
 ## History of discovery
 
 This bug was discovered during a routine investigation of a bug with my colleagues.
-After multiple analysis, we came to the conclusion on of our client application was doing something fishy.
-We nailed the issue to an error recovery code that was not cleaning everything.
+After multiple analysis, we came to the conclusion that one of our client application was 
+doing something fishy. We nailed the issue to an error recovery code on the client,
+ made a fix, published the new version and "voilà". This could have stopped there
+ in lots of company.
 
-After that, investigations came in on why a rogue client can put down one of our service when
-misbehaving.
+But one question remained: how on hell can a buggy client put down ou rest service. Did
+we do something wrong? The culprit was, you guess it, Spring.
 
-Once identified, the issue was immediatly raise to my company security manager. A workaround was 
-designed and a report made for he Spring teams. Communication with VMWare team was quick, polite and very
-professional. Those guys are used to handling security issue and put the proper priority on fixing it.
+Once identified, team escalated the issue immediately to security manager. 
+A workaround was crafted and a report made for the Spring teams. 
+Communication with VMWare team was quick, polite and very
+professional. Those guys are used to handling security issue and put the proper 
+priority on fixing it, congrats 👏👏👏.
 
+Now let's go for the yummy details 🔩.
 
 ## Overview
 
 In spring Framework, before 5.2.21 and 5.3.19, If you are exposing STOMP websockets using the Spring StompRelayMessageBroker,
 you are vulnerable to a simple DOS attack. By forcing the StompBrokerRelayMessageHandler to open multiple connections to the backend
-broker, you create permanent backend connection and sessions which are never reclaimed. In a few seconds,
+broker, you create permanent backend connections and sessions which are never reclaimed. In a few seconds,
 a browser client with little resources can overload your backend and bring it to a halt. 
 The effect of the DOS remain event after the is closed.  
 
-It's important to note that, despite CVE mentionning it requires authentication, it all depends on how you have setup your websocket.
-If your Websocket doesn't require authentication (eg it's a public api), exploitation of this issue does not require authentication.
+It's important to note that, despite CVE mentioning it requires authentication, it all depends on how you have setup your websocket.
+If your Websocket doesn't require authentication (eg it's a public news or quote api), 
+exploitation of this issue does not require authentication.
 
 
 ## Are you vulnerable?
@@ -52,45 +58,49 @@ Two key elements must be activated in a vulnerable version of Spring Framework t
 * You have enabled websocket support in Spring (eg using @EnableWebSocketMessageBroker)
 * You have enabled StompBrokerRelay (eg via MessageBrokerRegistry.enableStompBrokerRelay)
 
-TBD: exploit test
+Exploit code is published at https://github.com/tchize/CVE-2022-22971 (master branch).
 
 ## Technical behind this attack
 
 ### Stomp protocol
 
 A WebSocket is basically a raw permanent connection between the browser and the client. Any side can send anything inside it.
-Well nearly anything, the browser still has a tell on headers and how to negociate the websocket. And the server
+Well nearly anything, the browser still has final word on headers and how to negociate the websocket. And the server
 obviously has the right to find the behavior inacceptable and close the connection.
-Stomp is a textual protocol that can sit on top of WebSocket. It define verbs and a way to behave in a message
+
+Stomp (https://stomp.github.io) is a textual protocol that can sit on top of WebSocket. It define verbs and a way to behave in a message
 oriented architecture. It's not limited to websocket, server can implement Stomp directly on top TCP connections for example.
 
-STOMP will basically let you subscribe to Queue, Receive and Send messages.
+STOMP will basically let you subscribe to Queue, Receive messages and Send them.
 
 The interesting part here is that Stomp has a notion of Session, and that is what is abusable. 
-The STOMP protocol mandates that the client issues a CONNECT or a STOMP command prior to any SUBSCRIBE operation.
+The STOMP protocol mandates that the client issues a ‘CONNECT’ or a ‘STOMP’ command prior to any SUBSCRIBE operation.
 To the best of my knowledge, it does not clearly state if multiple CONNECT or STOMP commands are allowed 
 inside a single connection or the expected behavior of server in such condition.
 
-A Gray area in protocol, a security risk for implementation.
+A Gray area in protocol and you guess it, a security risk for implementation.
 
 ### Spring Relay implementation
 
 In Spring, the StompBrokerRelay has basically one Job: act as a Relay between the WebSocket and another third party STOMP
-server in the backend. This let you add Spring Message interceptors for security, cleaning message, audit logs, 
-restrict user queues access, whatever your business rules require to acheive the features you want to expose.
+server in the backend. Messages comes in, get filtered or altered, and pushed on backend. Messages comes from backend and are 
+routed to proper stomp sessions. 
 
-When you issue a CONNECT or STOMP command, the relay will establish a new TCP connection to the backend STOMP.
+The filtering let you add Spring Message interceptors for security, cleaning message, audit logs, 
+restrict user queues access, whatever your business rules require to achieve the features you want to expose.
+
+When you issue a CONNECT or STOMP command, the relay will establish a new TCP connection to the backend STOMP server.
 It will also generate a new session id that will be used to track that connection and associate it with your WebSocket. 
-If you close the WebSocket or the Session, the TCP connection will be closed too.
+If you close the WebSocket or the Session, the TCP connection will be closed too and private queues removed.
 
-Remember the Gray area about multiple CONNECT in the same WebSocket? Well, one part f the code doesn't care about the
-problem and will happily create new TCP connection while the other part assume there can be only one CONNECT and thus
+Remember the Gray area about multiple CONNECT in the same WebSocket? Well, one part of the code doesn't care about the
+problem and will happily create new TCP connection while the other part assume there can be only one CONNECT and one backend
 TCP Connection per WebSocket. The result is that, when you issue a second CONNECT in the same WebSocket, the previous
-TCP Connection stays open, but is not referenced anywhere. 
+TCP Connection stays open, but is not referenced anywhere anymore. 
 
 ### How to exploit it
 
-A git is available with all exploit code at XXXXXX
+A git will available with all exploit code later.
 
 #### Setup
 
@@ -125,7 +135,15 @@ Even after closing tab or browser, the connections between Spring and third part
 service remain. This mean the adverse party attacking this point does not have to keep
 the attack running. 
 
+## Fix
 
+Spring has published an official fix. 
+A sample code is provided in git at https://github.com/tchize/CVE-2022-22971  (branch upgrade). 
+It shows the behavior of spring after the official fix.
+You basically get messages in the form
+
+> WARN 9234 --- [nboundChannel-9] o.s.m.s.s.StompBrokerRelayMessageHandler : Ignoring CONNECT in session c7b7a322-26c6-436e-af15-5c452517fc9c. Already connected.
+>
 ## Workaround
 
 If you can't upgrade your Spring (seriously? Upgrade it), you can work around the issue
@@ -134,5 +152,6 @@ You can achieve this by using the Spring's Channel interceptor connected to the 
 In this interceptor track session ID's and CONNECT/DISCONNECT to ignore additional CONNECT and 
 not pass them to the StompBrokerRelay. 
 This should not be considered however as a permanent solution.
-A sample code is provided in git at XXXXXX
+
+A sample code is provided in git at https://github.com/tchize/CVE-2022-22971  (branch workaround)
 
