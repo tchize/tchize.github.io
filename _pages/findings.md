@@ -11,7 +11,7 @@ job, or as a simple user. Include, when possible, the story behind it.
  | status² | description |
  | --------| ---- |
  | Full disclosure | [CVE-2022-22971](/security/findings/spring-stomp-dos) A very simple to trigger DOS on Spring websocket |
- | Embargo | [Some belgian e-shop site](/security/findings/the-eshop-crm) A not surprising but worrying security vulnerability on an eshop|
+ | Partial Disclosure | [Some belgian e-shop site](/security/findings/the-eshop-crm) A not surprising but worrying security vulnerability on an eshop [(version française)](/security/findings/the-eshop-crm-fr)|
 
 ² status is one of the following:
 
