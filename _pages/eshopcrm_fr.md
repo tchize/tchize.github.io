@@ -13,7 +13,7 @@ Données personnelles. Tout doit partir :/
  
  |       |    |
  | --------------|------------|
- | Découverte | 1/9/2021 | 
+ | Découverte | 1/9/2022 | 
  | Date de notification | 15/9/2022 |
  | Status | Divulgation partielle | 
  | Type | Fuite de données personnelles, politique de stockage de mots de passe |
